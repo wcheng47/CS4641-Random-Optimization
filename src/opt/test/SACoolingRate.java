@@ -3,7 +3,7 @@ package opt.test;
 import func.nn.feedfwd.FeedForwardNetwork;
 import func.nn.feedfwd.FeedForwardNeuralNetworkFactory;
 import opt.OptimizationAlgorithm;
-import opt.RandomizedHillClimbing;
+import opt.SimulatedAnnealing;
 import opt.example.NeuralNetworkOptimizationProblem;
 import shared.DataSet;
 import shared.ErrorMeasure;
@@ -12,21 +12,14 @@ import shared.SumOfSquaresError;
 import shared.filt.RandomOrderFilter;
 import shared.filt.TestTrainSplitFilter;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
-/**
- * Implementation of randomized hill climbing, simulated annealing, and genetic algorithm to
- * find optimal weights to a neural network that is classifying abalone as having either fewer
- * or more than 15 rings.
- *
- * @author Hannah Lau
- * @version 1.0
- */
-public class RHCIterations {
+public class SACoolingRate {
     private static Instance[] instances = initializeInstances();
 
     private static int inputLayer = 5, outputLayer = 1, trainingIterations = 1000;
@@ -38,17 +31,26 @@ public class RHCIterations {
     private static OptimizationAlgorithm[] oa = new OptimizationAlgorithm[3];
     private static String[] oaNames = {"RHC", "SA", "GA"};
     private static String results = "";
-    private static List<Double> oaResultsTrain = new ArrayList<>();
-    private static List<Double> oaResultsTest = new ArrayList<>();
+    private static Map<Double, List<Double>> oaResultsTrain = new HashMap<>();
+    private static Map<Double, List<Double>> oaResultsTest = new HashMap<>();
     private static DecimalFormat df = new DecimalFormat("0.000");
+    private static Double[] coolingRates = {0.2, 0.35, 0.5, 0.65, 0.8, 0.95};
 
     public static void main(String[] args) {
-        for (int k = 0; k < 1; k++) {
-            new RandomOrderFilter().filter(set);
-            TestTrainSplitFilter ttsf = new TestTrainSplitFilter(70);
-            ttsf.filter(set);
-            DataSet train = ttsf.getTrainingSet();
-            DataSet test = ttsf.getTestingSet();
+        new RandomOrderFilter().filter(set);
+        TestTrainSplitFilter ttsf = new TestTrainSplitFilter(70);
+        ttsf.filter(set);
+        DataSet train = ttsf.getTrainingSet();
+        DataSet test = ttsf.getTestingSet();
+
+        for (int k = 0; k < coolingRates.length; k++) {
+            oaResultsTrain.put(coolingRates[k], new ArrayList<>());
+            oaResultsTest.put(coolingRates[k], new ArrayList<>());
+        }
+
+        for (int k = 0; k < coolingRates.length; k++) {
+            double coolingRate = coolingRates[k];
+            System.out.println("\nCooling Rate" + coolingRate + "\n");
 
             for(int i = 0; i < oa.length; i++) {
                 networks[i] = factory.createClassificationNetwork(
@@ -56,13 +58,13 @@ public class RHCIterations {
                 nnop[i] = new NeuralNetworkOptimizationProblem(train, networks[i], measure);
             }
 
-            oa[0] = new RandomizedHillClimbing(nnop[0]);
-            //oa[1] = new SimulatedAnnealing(1E12, .65, nnop[1]);
+            //oa[0] = new RandomizedHillClimbing(nnop[0]);
+            oa[1] = new SimulatedAnnealing(1E11, coolingRate, nnop[1]);
             //oa[2] = new StandardGeneticAlgorithm(200, 100, 10, nnop[2]);
 
-            for (int i = 0; i < 1; i++) {
+            for (int i = 1; i < 2; i++) {
                 double start = System.nanoTime(), end, trainingTime, testingTime, correct = 0, incorrect = 0;
-                train(oa[i], networks[i], oaNames[i], train, test); //trainer.train();
+                train(oa[i], networks[i], oaNames[i], train, test, coolingRate); //trainer.train();
                 end = System.nanoTime();
                 trainingTime = end - start;
                 trainingTime /= Math.pow(10, 9);
@@ -85,7 +87,7 @@ public class RHCIterations {
                 testingTime = end - start;
                 testingTime /= Math.pow(10, 9);
 
-                results += "\nResults for " + oaNames[i] + ": \nCorrectly classified " + correct + " instances." +
+                results += "\nResults for " + oaNames[i] + " Cooling Rate " + coolingRate + ": \nCorrectly classified " + correct + " instances." +
                         "\nIncorrectly classified " + incorrect + " instances.\nPercent correctly classified: "
                         + df.format(correct / (correct + incorrect) * 100) + "%\nTraining time: " + df.format(trainingTime)
                         + " seconds\nTesting time: " + df.format(testingTime) + " seconds\n";
@@ -94,19 +96,47 @@ public class RHCIterations {
         }
 
         try {
-            FileWriter fw = new FileWriter(new File("src/opt/test/rhc_iterations.csv"));
-            fw.write("Iterations,Training Error,Testing Error\n");
+            FileWriter fw = new FileWriter(new File("src/opt/test/sa_cool_train.csv"));
+            fw.write("Iterations,CR=0.2 Training,CR=0.35 Training,CR=0.5 Training,CR=0.65 Training,CR=0.8 Training,CR=0.95 Training\n");
             for (int i = 0; i < 1000; i++) {
-                fw.write((i+1) + "," + oaResultsTrain.get(i) + "," + oaResultsTest.get(i) + "\n");
+                fw.write((i+1) + ",");
+                for (int j = 0; j < coolingRates.length; j++) {
+                    if (j == coolingRates.length - 1) {
+                        fw.write(oaResultsTrain.get(coolingRates[j]).get(i) + "\n");
+                    } else {
+                        fw.write(oaResultsTrain.get(coolingRates[j]).get(i) + ",");
+                    }
+
+                }
             }
             fw.close();
         }
         catch(Exception e) {
             e.printStackTrace();
         }
+
+        try {
+            FileWriter fw2 = new FileWriter(new File("src/opt/test/sa_cool_test.csv"));
+            fw2.write("Iterations,CR=0.2 Testing,CR=0.35 Testing,CR=0.5 Testing,CR=0.65 Testing,CR=0.8 Testing,CR=0.95 Testing\n");
+            for (int i = 0; i < 1000; i++) {
+                fw2.write((i+1) + ",");
+                for (int j = 0; j < coolingRates.length; j++) {
+                    if (j == coolingRates.length - 1) {
+                        fw2.write(oaResultsTest.get(coolingRates[j]).get(i) + "\n");
+                    } else {
+                        fw2.write(oaResultsTest.get(coolingRates[j]).get(i) + ",");
+                    }
+
+                }
+            }
+            fw2.close();
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    private static void train(OptimizationAlgorithm oa, FeedForwardNetwork network, String oaName, DataSet train, DataSet test) {
+    private static void train(OptimizationAlgorithm oa, FeedForwardNetwork network, String oaName, DataSet train, DataSet test, double coolingRate) {
         System.out.println("\nError results for " + oaName + "\n---------------------------");
         Instance[] trainInstances = train.getInstances();
         Instance[] testInstances = test.getInstances();
@@ -142,8 +172,8 @@ public class RHCIterations {
             double testError = (double)testIncorrect / (testCorrect + testIncorrect) * 100;
 
             System.out.println("Iteration " + String.format("%04d" ,i) + ": " + df.format(trainError) + " " + df.format(testError));
-            oaResultsTrain.add(trainError);
-            oaResultsTest.add(testError);
+            oaResultsTrain.get(coolingRate).add(trainError);
+            oaResultsTest.get(coolingRate).add(testError);
         }
 
     }
