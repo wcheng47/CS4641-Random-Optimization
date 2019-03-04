@@ -29,7 +29,7 @@ import java.util.Scanner;
 public class RHCIterations {
     private static Instance[] instances = initializeInstances();
 
-    private static int inputLayer = 5, outputLayer = 1, trainingIterations = 1000;
+    private static int inputLayer = 5, outputLayer = 1, trainingIterations = 300;
     private static FeedForwardNeuralNetworkFactory factory = new FeedForwardNeuralNetworkFactory();
     private static ErrorMeasure measure = new SumOfSquaresError();
     private static DataSet set = new DataSet(instances);
@@ -96,7 +96,7 @@ public class RHCIterations {
         try {
             FileWriter fw = new FileWriter(new File("src/opt/test/rhc_iterations.csv"));
             fw.write("Iterations,Training Error,Testing Error\n");
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < trainingIterations; i++) {
                 fw.write((i+1) + "," + oaResultsTrain.get(i) + "," + oaResultsTest.get(i) + "\n");
             }
             fw.close();

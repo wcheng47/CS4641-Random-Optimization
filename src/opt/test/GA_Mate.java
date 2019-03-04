@@ -34,7 +34,9 @@ public class GA_Mate {
     private static Map<Integer, List<Double>> oaResultsTrain = new HashMap<>();
     private static Map<Integer, List<Double>> oaResultsTest = new HashMap<>();
     private static DecimalFormat df = new DecimalFormat("0.000");
-    private static int[] mates = {25, 50, 75, 100};
+    private static String name = "ga_mate_25";
+    private static int[] mates = {50};
+//    private static int[] mates = {25, 50, 75, 100};
 
     public static void main(String[] args) {
         new RandomOrderFilter().filter(set);
@@ -96,9 +98,9 @@ public class GA_Mate {
         }
 
         try {
-            FileWriter fw = new FileWriter(new File("src/opt/test/ga_mate_train.csv"));
+            FileWriter fw = new FileWriter(new File("src/opt/test/" + name + "_train.csv"));
             fw.write("Iterations,Mate=25 Training,Mate=50 Training,Mate=75 Training,Mate=100 Training\n");
-            for (int i = 0; i < 200; i++) {
+            for (int i = 0; i < trainingIterations; i++) {
                 fw.write((i+1) + ",");
                 for (int j = 0; j < mates.length; j++) {
                     if (j == mates.length - 1) {
@@ -116,9 +118,9 @@ public class GA_Mate {
         }
 
         try {
-            FileWriter fw2 = new FileWriter(new File("src/opt/test/ga_mate_test.csv"));
+            FileWriter fw2 = new FileWriter(new File("src/opt/test/" + name + "_test.csv"));
             fw2.write("Iterations,Mate=25 Testing,Mate=50 Testing,Mate=75 Testing,Mate=100 Testing\n");
-            for (int i = 0; i < 200; i++) {
+            for (int i = 0; i < trainingIterations; i++) {
                 fw2.write((i+1) + ",");
                 for (int j = 0; j < mates.length; j++) {
                     if (j == mates.length - 1) {

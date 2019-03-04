@@ -22,7 +22,7 @@ import java.util.*;
 public class SACoolingRate {
     private static Instance[] instances = initializeInstances();
 
-    private static int inputLayer = 5, outputLayer = 1, trainingIterations = 1000;
+    private static int inputLayer = 5, outputLayer = 1, trainingIterations = 400;
     private static FeedForwardNeuralNetworkFactory factory = new FeedForwardNeuralNetworkFactory();
     private static ErrorMeasure measure = new SumOfSquaresError();
     private static DataSet set = new DataSet(instances);
@@ -34,7 +34,9 @@ public class SACoolingRate {
     private static Map<Double, List<Double>> oaResultsTrain = new HashMap<>();
     private static Map<Double, List<Double>> oaResultsTest = new HashMap<>();
     private static DecimalFormat df = new DecimalFormat("0.000");
-    private static Double[] coolingRates = {0.2, 0.35, 0.5, 0.65, 0.8, 0.95};
+    private static String name = "sa_cool_.95_2";
+    private static Double[] coolingRates = {.95};
+    //0.35, 0.5, 0.65, 0.8, 0.95
 
     public static void main(String[] args) {
         new RandomOrderFilter().filter(set);
@@ -96,9 +98,9 @@ public class SACoolingRate {
         }
 
         try {
-            FileWriter fw = new FileWriter(new File("src/opt/test/sa_cool_train.csv"));
+            FileWriter fw = new FileWriter(new File("src/opt/test/" + name + "_train.csv"));
             fw.write("Iterations,CR=0.2 Training,CR=0.35 Training,CR=0.5 Training,CR=0.65 Training,CR=0.8 Training,CR=0.95 Training\n");
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < trainingIterations; i++) {
                 fw.write((i+1) + ",");
                 for (int j = 0; j < coolingRates.length; j++) {
                     if (j == coolingRates.length - 1) {
@@ -116,9 +118,9 @@ public class SACoolingRate {
         }
 
         try {
-            FileWriter fw2 = new FileWriter(new File("src/opt/test/sa_cool_test.csv"));
+            FileWriter fw2 = new FileWriter(new File("src/opt/test/" + name + "_test.csv"));
             fw2.write("Iterations,CR=0.2 Testing,CR=0.35 Testing,CR=0.5 Testing,CR=0.65 Testing,CR=0.8 Testing,CR=0.95 Testing\n");
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < trainingIterations; i++) {
                 fw2.write((i+1) + ",");
                 for (int j = 0; j < coolingRates.length; j++) {
                     if (j == coolingRates.length - 1) {

@@ -22,7 +22,7 @@ import java.util.*;
 public class SA_Temp {
     private static Instance[] instances = initializeInstances();
 
-    private static int inputLayer = 5, outputLayer = 1, trainingIterations = 1000;
+    private static int inputLayer = 5, outputLayer = 1, trainingIterations = 300;
     private static FeedForwardNeuralNetworkFactory factory = new FeedForwardNeuralNetworkFactory();
     private static ErrorMeasure measure = new SumOfSquaresError();
     private static DataSet set = new DataSet(instances);
@@ -34,9 +34,10 @@ public class SA_Temp {
     private static Map<Double, List<Double>> oaResultsTrain = new HashMap<>();
     private static Map<Double, List<Double>> oaResultsTest = new HashMap<>();
     private static DecimalFormat df = new DecimalFormat("0.000");
-    private static Double[] temperatures = {1E9, 1E10, 1E11, 1E12, 1E13};
+    private static Double[] temperatures = {1E13};
 
     public static void main(String[] args) {
+        System.out.println("SA_Temp");
         new RandomOrderFilter().filter(set);
         TestTrainSplitFilter ttsf = new TestTrainSplitFilter(70);
         ttsf.filter(set);
@@ -96,9 +97,9 @@ public class SA_Temp {
         }
 
         try {
-            FileWriter fw = new FileWriter(new File("src/opt/test/sa_temp_train.csv"));
+            FileWriter fw = new FileWriter(new File("src/opt/test/sa_temp_train_1E13_2.csv"));
             fw.write("Iterations,Temp=1E9 Training,Temp=1E10 Training,Temp=1E11 Training,Temp=1E12 Training,Temp=1E13 Training\n");
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < trainingIterations; i++) {
                 fw.write((i+1) + ",");
                 for (int j = 0; j < temperatures.length; j++) {
                     if (j == temperatures.length - 1) {
@@ -116,9 +117,9 @@ public class SA_Temp {
         }
 
         try {
-            FileWriter fw2 = new FileWriter(new File("src/opt/test/sa_temp_test.csv"));
+            FileWriter fw2 = new FileWriter(new File("src/opt/test/sa_temp_test_1E13_2.csv"));
             fw2.write("Iterations,Temp=1E9 Testing,Temp=1E10 Testing,Temp=1E11 Testing,Temp=1E12 Testing,Temp=1E13 Testing\n");
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < trainingIterations; i++) {
                 fw2.write((i+1) + ",");
                 for (int j = 0; j < temperatures.length; j++) {
                     if (j == temperatures.length - 1) {
@@ -140,6 +141,8 @@ public class SA_Temp {
         System.out.println("\nError results for " + oaName + "\n---------------------------");
         Instance[] trainInstances = train.getInstances();
         Instance[] testInstances = test.getInstances();
+
+        boolean first = true;
 
         for(int i = 0; i < trainingIterations; i++) {
             oa.train();
@@ -175,7 +178,6 @@ public class SA_Temp {
             oaResultsTrain.get(temperature).add(trainError);
             oaResultsTest.get(temperature).add(testError);
         }
-
     }
 
     private static Instance[] initializeInstances() {
